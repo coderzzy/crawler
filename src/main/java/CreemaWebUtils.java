@@ -7,6 +7,8 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -37,18 +39,28 @@ public class CreemaWebUtils {
     private static final Pattern CSRF_TOKEN_PATTERN = Pattern.compile("(?<=csrfToken: ').*(?=')");
     private static final String DUPLICATE_SIGN_UP = "既に登録済みのメールアドレスです";
     private static final String SEARCH_WORD = "La belleza";
+    private static final Pattern ITEM_ID_PATTERN = Pattern.compile("(?<=data-id=\").*(?=\")");
 
     public static void main(String[] args) throws InterruptedException {
+        testRandomAccount();
+    }
+
+    private static void testRandomAccount() throws InterruptedException {
+        // 0. 先进入首页
         Env env = getEnv();
         System.out.println("env = " + JSON.toJSONString(env));
         String csrfToken = env.getCsrfToken();
         String cookies = env.getCookies();
+        CrawlUtils.randomSleep(1000, 2000);
 
-        Thread.sleep(1000);
+        // 1. 生成随机账号
+        String randomStr = CrawlUtils.getStringRandom(8);
+        String email = randomStr + "@gmail.com";
+        String userName = randomStr;
+        String password = "1a" + randomStr;
+        System.out.println("random account, " + email);
 
-        String email = "zzx@gmail.com";
-        String password = "zzx12xzz";
-        String userName = "zzx";
+        // 2. 注册 + 自动跳转回首页
         Env newEnv = signUp(email, password, userName, csrfToken, cookies);
         System.out.println("after signUp, newEnv = " + JSON.toJSONString(newEnv));
         if (null == newEnv) {
@@ -57,16 +69,24 @@ public class CreemaWebUtils {
         }
         csrfToken = newEnv.getCsrfToken();
         cookies = newEnv.getCookies();
+        CrawlUtils.randomSleep(1000, 2000);
 
-        Thread.sleep(1000);
+        // 3. 搜索
+        Set<String> itemIds = search(SEARCH_WORD, cookies);
+        System.out.println("after search, itemIds = " + itemIds);
+        CrawlUtils.randomSleep(1000, 2000);
 
-        String result = favorite("8748188", csrfToken, cookies);
-        System.out.println("after favorite, result = " + result);
+        // 4. 收藏
+        for (String itemId : itemIds) {
+            String result = favorite(itemId, csrfToken, cookies);
+            System.out.println("after favorite, result = " + result);
+            CrawlUtils.randomSleep(1000, 2000);
+        }
 
-        Thread.sleep(1000);
-
+        // 5. 登出
         signOut(cookies);
         System.out.println("after signOut");
+        CrawlUtils.randomSleep(1000, 2000);
     }
 
     // ----------------------功能代码----------------------
@@ -138,6 +158,31 @@ public class CreemaWebUtils {
         String newCsrfToken = m.find() ? m.group(0) : "";
 
         return new Env(newCookies, newCsrfToken);
+    }
+
+    /**
+     * 搜索
+     */
+    private static Set<String> search(String word, String cookies) {
+        String uri = String.format(
+                "https://www.creema.jp/listing?active=pc_home-leftside&mode=keyword&q=%s", word);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(HttpHeaders.USER_AGENT, HttpUtils.BROWSER_USER_AGENT);
+        headers.set(HttpHeaders.COOKIE, cookies);
+
+        HttpEntity entity = new HttpEntity<>(headers);
+        ResponseEntity<String> result = HttpUtils.doGet(uri, entity);
+
+        doDebug("search result = " + result);
+
+        Matcher m = ITEM_ID_PATTERN.matcher(result.getBody());
+        Set<String> itemIdSet = new HashSet<>();
+        while (m.find()) {
+            itemIdSet.add(m.group(0));
+        }
+
+        return itemIdSet;
     }
 
     /**

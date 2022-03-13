@@ -8,7 +8,6 @@ import org.springframework.util.MultiValueMap;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Random;
 import java.util.stream.Collectors;
 
 public class MinneUtils {
@@ -40,7 +39,7 @@ public class MinneUtils {
 
     private static void testRandomAccount() throws InterruptedException {
         // 0. 生成随机账号
-        String randomStr = getStringRandom(8);
+        String randomStr = CrawlUtils.getStringRandom(8);
         String email = randomStr + "@qq.com";
         String userName = randomStr;
         String password = "1a" + randomStr;
@@ -123,29 +122,6 @@ public class MinneUtils {
     }
 
     // ----------------------功能代码----------------------
-
-    /**
-     * 生成随机用户名，数字和字母组成
-     *
-     * @param length
-     * @return
-     */
-    private static String getStringRandom(int length) {
-        StringBuilder val = new StringBuilder();
-        Random random = new Random();
-        //参数length，表示生成几位随机数
-        for (int i = 0; i < length; i++) {
-            String charOrNum = random.nextInt(2) % 2 == 0 ? "char" : "num";
-            //输出字母还是数字
-            if ("char".equalsIgnoreCase(charOrNum)) {
-                // 只有小写字母
-                val.append((char) (random.nextInt(26) + 97));
-            } else {
-                val.append(random.nextInt(10));
-            }
-        }
-        return val.toString();
-    }
 
     /**
      * 注册阶段会校验userName是否重复
