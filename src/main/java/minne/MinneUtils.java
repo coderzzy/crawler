@@ -1,3 +1,5 @@
+package minne;
+
 import com.alibaba.fastjson.JSON;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -5,6 +7,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import utils.CrawlUtils;
+import utils.HttpUtils;
 
 import java.util.Collections;
 import java.util.List;
